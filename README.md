@@ -1,4 +1,4 @@
-# Project 2 - Custom Top Implementation
+# Project 3 - CPU Scheduling Simulator
 
 For this project, you'll implement a next-event simulation capable of simulating
 CPU scheduling for a set of different algorithms.
