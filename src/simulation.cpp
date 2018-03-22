@@ -62,6 +62,12 @@ void Simulation::run(const string& filename) {
     // Free the event's memory.
     delete event;
   }
+
+  for (pair<int, Process*> entry : processes) {
+    logger.print_process_details(entry.second);
+  }
+
+  logger.print_statistics(calculate_statistics());
 }
 
 
@@ -74,14 +80,15 @@ void Simulation::handle_thread_arrived(const Event* event) {
   // this is probably handled correctly (done in class)
   cout << "event: THREAD_ARRIVED" << endl;
   assert(event->thread->current_state == Thread::State::NEW);
+  // set the thread state to ready
+  event->thread->set_state(Thread::State::READY, event->time);
+  assert(event->thread->current_state == Thread::State::READY);
+
+  // add the thread to the queue
   scheduler->enqueue(event, event->thread);
 
-  event->thread->previous_state = Thread::State::NEW;
-  event->thread->current_state = Thread::State::RUNNING;
-  assert(event->thread->current_state == Thread::State::RUNNING);
-
   // create a new event to put on the queue
-  Event* e = new Event(Event::Type::DISPATCHER_INVOKED, event->time + 0, event->thread);
+  Event* e = new Event(Event::Type::DISPATCHER_INVOKED, event->time, event->thread);
   add_event(e);
 }
 
@@ -142,6 +149,8 @@ void Simulation::handle_thread_preempted(const Event* event) {
 void Simulation::handle_dispatcher_invoked(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
   // handle starting a thread or process, including the time hit from that change
+  // check for decision
+  // check for next thread
   cout << "event: DISPATCHER_INVOKED" << endl;
   // get current desicion and set the current thread
   SchedulingDecision* dec = scheduler->get_next_thread(event);

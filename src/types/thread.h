@@ -107,8 +107,5 @@ struct Thread {
   // so forth. These take care of updating the state and times based on the
   // provided event.
 
-  void set_ready();
-  void set_running();
-  void set_blocked();
-  void set_exit();
+  void set_state(State state, size_t time);
 };
