@@ -21,7 +21,8 @@ struct Scheduler {
 
   /**
    * Returns true if the currently running thread should be preempted upon the
-   * arrival of the given thread, as represented by event.
+   * arrival of the given thread, as represented by event. Ususally used for
+   * shortest process next.
    */
   virtual bool should_preempt_on_arrival(const Event* event) const = 0;
 

@@ -51,6 +51,14 @@ void Simulation::run(const string& filename) {
       break;
     }
 
+    // print out for verbose output
+    if (event->thread &&
+        event->thread->current_state != event->thread->previous_state) {
+      logger.print_state_transition(event,
+                                    event->thread->previous_state,
+                                    event->thread->current_state);
+    }
+
     // Free the event's memory.
     delete event;
   }
@@ -63,20 +71,30 @@ void Simulation::run(const string& filename) {
 
 
 void Simulation::handle_thread_arrived(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
+  // this is probably handled correctly (done in class)
   cout << "event: THREAD_ARRIVED" << endl;
+  assert(event->thread->current_state == Thread::State::NEW);
+  scheduler->enqueue(event, event->thread);
+
+  event->thread->previous_state = Thread::State::NEW;
+  event->thread->current_state = Thread::State::RUNNING;
+  assert(event->thread->current_state == Thread::State::RUNNING);
+
+  // create a new event to put on the queue
+  Event* e = new Event(Event::Type::DISPATCHER_INVOKED, event->time + 0, event->thread);
+  add_event(e);
 }
 
 
 void Simulation::handle_thread_dispatch_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
-  cout << "event: PROCESS_DISPATCH_COMPLETED" << endl;
+  cout << "event: THREAD_DISPATCH_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_process_dispatch_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
-  cout << "event: THREAD_DISPATCH_COMPLETED" << endl;
+  cout << "event: PROCESS_DISPATCH_COMPLETED" << endl;
 }
 
 
@@ -106,7 +124,18 @@ void Simulation::handle_thread_preempted(const Event* event) {
 
 void Simulation::handle_dispatcher_invoked(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
+  // handle starting a thread or process, including the time hit from that change
   cout << "event: DISPATCHER_INVOKED" << endl;
+  // get current desicion and set the current thread
+  SchedulingDecision* dec = scheduler->get_next_thread(event);
+  Thread* next_thread = dec->thread;
+  Event* e;
+  if (prev_thread == nullptr || next_thread->process != prev_thread->process) { // process switch
+    e = new Event(Event::Type::PROCESS_DISPATCH_COMPLETED, event->time + 0, next_thread);
+  } else { // thread switch
+    e = new Event(Event::Type::THREAD_DISPATCH_COMPLETED, event->time + 0, next_thread);
+  }
+  add_event(e);
 }
 
 

@@ -3,6 +3,7 @@
 #include "types/event.h"
 #include "types/scheduling_decision.h"
 #include "types/thread.h"
+#include <queue>
 
 
 /**
@@ -24,5 +25,5 @@ public:
 
 private:
 
-  // TODO: add any instance variables you need
+  std::queue<Thread*> threads;
 };
