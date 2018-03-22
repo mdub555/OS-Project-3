@@ -88,36 +88,53 @@ void Simulation::handle_thread_arrived(const Event* event) {
 
 void Simulation::handle_thread_dispatch_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
-  cout << "event: THREAD_DISPATCH_COMPLETED" << endl;
+  // set the thread running
+  // set last_thread = current_thread
+  cout << "event: PROCESS_DISPATCH_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_process_dispatch_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
-  cout << "event: PROCESS_DISPATCH_COMPLETED" << endl;
+  // set the thread running
+  // set last_thread = current_thread
+  cout << "event: THREAD_DISPATCH_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_cpu_burst_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
+  // pop burst from queue
+  // unset current_thread
+  // if it's the last cpu burst
+  //     create thread completed event
+  // else
+  //     create io burst completed event
   cout << "event: CPU_BURST_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_io_burst_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
+  // set corresponding thread to ready
+  // enqueue the thread in the scheduler
+  // pop the io burst
   cout << "event: IO_BURST_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_thread_completed(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
+  // set the thread state to exit
   cout << "event: THREAD_COMPLETED" << endl;
 }
 
 
 void Simulation::handle_thread_preempted(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
+  // set the new thread to ready
+  // create new thread and enqueue in scheduler
+  // decrease cpu burst
   cout << "event: THREAD_PREEMPTED" << endl;
 }
 

@@ -89,15 +89,15 @@ struct Thread {
 
   size_t response_time() const {
     assert(current_state == EXIT);
-    // TODO: calculate real value
-    return 0;
+    assert(start_time > arrival_time);
+    return start_time - arrival_time;
   }
   
   
   size_t turnaround_time() const {
     assert(current_state == EXIT);
-    // TODO: calculate real value
-    return 0;
+    assert(end_time > arrival_time);
+    return end_time - arrival_time;
   }
 
   // TODO: threads in our simulation have behavior, so add helper methods here
