@@ -35,3 +35,9 @@ You might need to install Boost. I did it using HomeBrew via:
 
 You can also choose to rewrite the output methods (in src/util/logger.cpp) to
 not use Boost. That's a thing. ...that some people might do. Because... why not!
+
+## Graded
+* Score tag deliverable-1: 17/20
+* The -t flag causes crash -1
+* No stats -2
+
