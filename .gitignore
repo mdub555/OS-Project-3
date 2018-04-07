@@ -1,3 +1,4 @@
 simulator
 *.dSYM
 bin/
+*.output

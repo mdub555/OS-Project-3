@@ -156,7 +156,8 @@ void Logger::print_statistics(SystemStats stats) const {
 
 template<typename T>
 string Logger::colorize(Color color, T text) const {
-  return (format("%s%s%s") % COLOR_MAP[color] % text % "\033[0m").str();
+  return (format("%s") % text).str();
+  //return (format("%s%s%s") % COLOR_MAP[color] % text % "\033[0m").str();
 }
 
 

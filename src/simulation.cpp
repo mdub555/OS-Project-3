@@ -52,22 +52,25 @@ void Simulation::run(const string& filename) {
     }
 
     // print out for verbose output
-    if (event->thread &&
-        event->thread->current_state != event->thread->previous_state) {
-      logger.print_state_transition(event,
-                                    event->thread->previous_state,
-                                    event->thread->current_state);
+    // output on a non-null event that changed state
+    if (event->thread) {
+      if (event->thread->current_state != event->thread->previous_state) {
+        logger.print_state_transition(event,
+                                      event->thread->previous_state,
+                                      event->thread->current_state);
+      }
     }
 
     // Free the event's memory.
     delete event;
   }
 
-  for (pair<int, Process*> entry : processes) {
-    logger.print_process_details(entry.second);
-  }
+  // TODO: uncomment this at the end
+  //for (pair<int, Process*> entry : processes) {
+    //logger.print_process_details(entry.second);
+  //}
 
-  logger.print_statistics(calculate_statistics());
+  //logger.print_statistics(calculate_statistics());
 }
 
 
@@ -78,7 +81,6 @@ void Simulation::run(const string& filename) {
 
 void Simulation::handle_thread_arrived(const Event* event) {
   // this is probably handled correctly (done in class)
-  cout << "event: THREAD_ARRIVED" << endl;
   assert(event->thread->current_state == Thread::State::NEW);
   // set the thread state to ready
   event->thread->set_state(Thread::State::READY, event->time);
@@ -88,80 +90,152 @@ void Simulation::handle_thread_arrived(const Event* event) {
   scheduler->enqueue(event, event->thread);
 
   // create a new event to put on the queue
-  Event* e = new Event(Event::Type::DISPATCHER_INVOKED, event->time, event->thread);
-  add_event(e);
+  invoke_dispatcher(event->time);
 }
 
 
 void Simulation::handle_thread_dispatch_completed(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
+  assert(event->thread->current_state == Thread::State::READY);
   // set the thread running
-  // set last_thread = current_thread
-  cout << "event: PROCESS_DISPATCH_COMPLETED" << endl;
+  event->thread->set_state(Thread::State::RUNNING, event->time);
+  // update the previously running thread
+  prev_thread = active_thread;
+  active_thread = event->thread;
+
+  // create a new event based on the time slice and thread length
+  assert(event->thread->bursts.front()->type == Burst::Type::CPU);
+  size_t burst_length = event->thread->bursts.front()->length;
+  size_t time_slice = event->scheduling_decision->time_slice;
+  if (time_slice < burst_length) { // thread gets preempted
+    Event* e = new Event(Event::Type::THREAD_PREEMPTED,
+                         event->time + time_slice,
+                         event->thread,
+                         event->scheduling_decision);
+    add_event(e);
+  } else {
+    Event* e = new Event(Event::Type::CPU_BURST_COMPLETED,
+                         event->time + burst_length,
+                         event->thread);
+    add_event(e);
+  }
 }
 
 
 void Simulation::handle_process_dispatch_completed(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
-  // set the thread running
-  // set last_thread = current_thread
-  cout << "event: THREAD_DISPATCH_COMPLETED" << endl;
+  // a process dispatch does the same thing as a thread dispatch, so we call
+  // that function here. This function is still used in order for the
+  // output to work correctly.
+  handle_thread_dispatch_completed(event);
 }
 
 
 void Simulation::handle_cpu_burst_completed(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
   // pop burst from queue
+  assert(event->thread->bursts.front()->type == Burst::Type::CPU);
+  event->thread->bursts.pop();
   // unset current_thread
-  // if it's the last cpu burst
-  //     create thread completed event
-  // else
-  //     create io burst completed event
-  cout << "event: CPU_BURST_COMPLETED" << endl;
+  prev_thread = active_thread;
+  active_thread = nullptr;
+
+  // invoke the dispatcher
+  invoke_dispatcher(event->time);
+
+  // add new event based on if this is the last CPU burst
+  Event* e;
+  if (event->thread->bursts.size() == 0) { // last CPU burst
+    e = new Event(Event::Type::THREAD_COMPLETED, event->time, event->thread);
+  } else {
+    event->thread->set_state(Thread::State::BLOCKED, event->time);
+    e = new Event(Event::Type::IO_BURST_COMPLETED,
+                  event->time + event->thread->bursts.front()->length,
+                  event->thread);
+  }
+  add_event(e);
 }
 
 
 void Simulation::handle_io_burst_completed(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
+  assert(event->thread->current_state == Thread::State::BLOCKED);
   // set corresponding thread to ready
-  // enqueue the thread in the scheduler
+  event->thread->set_state(Thread::State::READY, event->time);
+
   // pop the io burst
-  cout << "event: IO_BURST_COMPLETED" << endl;
+  assert(event->thread->bursts.front()->type == Burst::Type::IO);
+  event->thread->bursts.pop();
+
+  // enqueue the thread in the scheduler
+  scheduler->enqueue(event, event->thread);
+
+  // invoke the dispatcher
+  invoke_dispatcher(event->time);
 }
 
 
 void Simulation::handle_thread_completed(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
   // set the thread state to exit
-  cout << "event: THREAD_COMPLETED" << endl;
+  assert(event->thread->current_state == Thread::State::RUNNING);
+  event->thread->set_state(Thread::State::EXIT, event->time);
+  // the dispatcher has already been invoked by this time (in handle_cpu_burst_completed), there is
+  // no need to call it again
 }
 
 
 void Simulation::handle_thread_preempted(const Event* event) {
   // TODO: handle this event properly (feel free to modify code structure, tho)
-  // set the new thread to ready
-  // create new thread and enqueue in scheduler
+  // set the thread to ready
+  assert(event->thread->current_state == Thread::State::RUNNING);
+  event->thread->set_state(Thread::State::READY, event->time);
+
   // decrease cpu burst
-  cout << "event: THREAD_PREEMPTED" << endl;
+  assert(event->thread->bursts.front()->type == Burst::Type::CPU);
+  assert((size_t)event->thread->bursts.front()->length > event->scheduling_decision->time_slice);
+  event->thread->bursts.front()->length -= event->scheduling_decision->time_slice;
+
+  // enqueue the thread in the scheduler
+  scheduler->enqueue(event, event->thread);
+
+  prev_thread = active_thread;
+  active_thread = nullptr;
+  invoke_dispatcher(event->time);
 }
 
 
 void Simulation::handle_dispatcher_invoked(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
-  // handle starting a thread or process, including the time hit from that change
-  // check for decision
-  // check for next thread
-  cout << "event: DISPATCHER_INVOKED" << endl;
   // get current desicion and set the current thread
   SchedulingDecision* dec = scheduler->get_next_thread(event);
+  // check for decision
+  if (dec == nullptr) return;
   Thread* next_thread = dec->thread;
+  // check for next thread
+  if (next_thread == nullptr) return;
   Event* e;
   if (prev_thread == nullptr || next_thread->process != prev_thread->process) { // process switch
-    e = new Event(Event::Type::PROCESS_DISPATCH_COMPLETED, event->time + 0, next_thread);
+    e = new Event(Event::Type::PROCESS_DISPATCH_COMPLETED,
+                 event->time + process_switch_overhead,
+                 next_thread,
+                 dec);
   } else { // thread switch
-    e = new Event(Event::Type::THREAD_DISPATCH_COMPLETED, event->time + 0, next_thread);
+    e = new Event(Event::Type::THREAD_DISPATCH_COMPLETED,
+                 event->time + thread_switch_overhead,
+                 next_thread,
+                 dec);
   }
   add_event(e);
+
+  // the logger won't print for DISPATCHER_INVOKED since it is called with a nullptr thread, call it
+  // in this function for the custom message
+  logger.print_verbose(event, e->thread, dec->explanation);
+
+  active_thread = next_thread; // set here to show that the processor is busy
+}
+
+
+void Simulation::invoke_dispatcher(const int time) {
+  // if the provessor is idle, add a dispatch event
+  if (active_thread == nullptr) {
+    Event* e = new Event(Event::Type::DISPATCHER_INVOKED, time, nullptr);
+    add_event(e);
+  }
 }
 
 

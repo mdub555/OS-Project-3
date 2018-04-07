@@ -42,6 +42,8 @@ private:
 
   void handle_dispatcher_invoked(const Event* event);
 
+  void invoke_dispatcher(const int time);
+
 // UTILITY METHODS
 private:
 

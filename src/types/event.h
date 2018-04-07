@@ -82,7 +82,7 @@ struct Event {
   /**
    * Constructor.
    */
-  Event(Type type, int time, Thread* thread, SchedulingDecision* sd)
+  Event(Type type, int time, Thread* thread, const SchedulingDecision* sd)
       : type(type), time(time), thread(thread), scheduling_decision(sd) {}
 
   /**

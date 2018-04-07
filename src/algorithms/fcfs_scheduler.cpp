@@ -4,11 +4,15 @@ using namespace std;
 
 
 SchedulingDecision* FcfsScheduler::get_next_thread(const Event* event) {
+  if (empty()) return nullptr; // return null if there is no thread to run
   // Scheduling Decision, keep default time slice
   SchedulingDecision* dec = new SchedulingDecision();
+
+  // get size before popping thread
+  dec->explanation = "Selected from " + to_string(size()) + " threads; will run to completion of burst";
+
   dec->thread = threads.front(); // add thread to decision
   threads.pop();                 // remove thread from queue
-  dec->explanation = "FCFS, this is the next thread in the queue";
   return dec;
 }
 

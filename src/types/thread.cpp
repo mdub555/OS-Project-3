@@ -9,6 +9,8 @@ void Thread::set_state(State state, size_t time) {
   assert(current_state != state);
   if (current_state == NEW && state == READY) {
   } else if (current_state == READY && state == RUNNING) {
+  } else if (current_state == RUNNING && state == READY) {
+    service_time += (time - state_change_time);
   } else if (current_state == RUNNING && state == BLOCKED) {
     service_time += (time - state_change_time);
   } else if (current_state == BLOCKED && state == READY) {
