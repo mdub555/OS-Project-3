@@ -16,7 +16,7 @@ struct SchedulingDecision {
    * The amount of time after which the thread should be preempted, or -1 if
    * the thread should not be preempted.
    */
-  size_t time_slice = 3;
+  size_t time_slice = -1;
 
   /**
    * A brief message concerning this scheduling choice.

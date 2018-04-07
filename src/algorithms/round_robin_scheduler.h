@@ -3,6 +3,7 @@
 #include "types/event.h"
 #include "types/scheduling_decision.h"
 #include "types/thread.h"
+#include "algorithms/fcfs_scheduler.h"
 
 
 /**
@@ -32,5 +33,7 @@ private:
    */
   const size_t time_slice;
 
-  // TODO: add any instance variables you need
+  // since RR is just like FCFS, but with a time slice, I can use all the methods that
+  // have already been made in a FCFS scheduler
+  FcfsScheduler scheduler;
 };
