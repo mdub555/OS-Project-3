@@ -2,13 +2,13 @@
 #include <fstream>
 
 
-// TODO: implement the behavior for your thread methods (optional)
 // set the thread's state where the change in state happens at `time`
 void Thread::set_state(State state, size_t time) {
   // make sure the state is actually changing
   assert(current_state != state);
   if (current_state == NEW && state == READY) {
   } else if (current_state == READY && state == RUNNING) {
+    if (start_time > time) start_time = time;
   } else if (current_state == RUNNING && state == READY) {
     service_time += (time - state_change_time);
   } else if (current_state == RUNNING && state == BLOCKED) {

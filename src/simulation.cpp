@@ -51,6 +51,9 @@ void Simulation::run(const string& filename) {
       break;
     }
 
+    // change some of the stats in SystemStats
+    stats.total_time = event->time;
+
     // print out for verbose output
     // output on a non-null event that changed state
     if (event->thread) {
@@ -65,12 +68,11 @@ void Simulation::run(const string& filename) {
     delete event;
   }
 
-  // TODO: uncomment this at the end
-  //for (pair<int, Process*> entry : processes) {
-    //logger.print_process_details(entry.second);
-  //}
+  for (pair<int, Process*> entry : processes) {
+    logger.print_process_details(entry.second);
+  }
 
-  //logger.print_statistics(calculate_statistics());
+  logger.print_statistics(calculate_statistics());
 }
 
 
@@ -112,11 +114,13 @@ void Simulation::handle_thread_dispatch_completed(const Event* event) {
                          event->thread,
                          event->scheduling_decision);
     add_event(e);
+    stats.service_time += time_slice;
   } else {
     Event* e = new Event(Event::Type::CPU_BURST_COMPLETED,
                          event->time + burst_length,
                          event->thread);
     add_event(e);
+    stats.service_time += burst_length;
   }
 }
 
@@ -161,6 +165,8 @@ void Simulation::handle_io_burst_completed(const Event* event) {
 
   // pop the io burst
   assert(event->thread->bursts.front()->type == Burst::Type::IO);
+  // change the system stats first
+  stats.io_time += event->thread->bursts.front()->length;
   event->thread->bursts.pop();
 
   // enqueue the thread in the scheduler
@@ -181,7 +187,6 @@ void Simulation::handle_thread_completed(const Event* event) {
 
 
 void Simulation::handle_thread_preempted(const Event* event) {
-  // TODO: handle this event properly (feel free to modify code structure, tho)
   // set the thread to ready
   assert(event->thread->current_state == Thread::State::RUNNING);
   event->thread->set_state(Thread::State::READY, event->time);
@@ -214,17 +219,19 @@ void Simulation::handle_dispatcher_invoked(const Event* event) {
                  event->time + process_switch_overhead,
                  next_thread,
                  dec);
+    // change the system stats
+    stats.dispatch_time += process_switch_overhead;
   } else { // thread switch
     e = new Event(Event::Type::THREAD_DISPATCH_COMPLETED,
                  event->time + thread_switch_overhead,
                  next_thread,
                  dec);
+    stats.dispatch_time += thread_switch_overhead;
   }
   add_event(e);
 
-  // the logger won't print for DISPATCHER_INVOKED since it is called with a nullptr thread, call it
-  // in this function for the custom message
-  // FIXME this function call creates a segfault after a process is preempted
+  // the logger won't print for DISPATCHER_INVOKED since it is called with a nullptr thread,
+  // call it in this function for the custom message
   logger.print_verbose(event, e->thread, dec->explanation);
 
   active_thread = next_thread; // set here to show that the processor is busy
@@ -321,6 +328,34 @@ Thread* Simulation::read_thread(istream& in, int tid, Process* process) {
 
 
 SystemStats Simulation::calculate_statistics() {
-  // TODO: your code here (optional; feel free to modify code structure)
-  return SystemStats();
+  stats.total_cpu_time = stats.service_time + stats.dispatch_time;
+  stats.total_idle_time = stats.total_time - stats.total_cpu_time;
+  stats.cpu_utilization = (double)stats.total_cpu_time / (double)stats.total_time * 100.0;
+  stats.cpu_efficiency = (double)stats.service_time / (double)stats.total_time * 100.0;
+
+  // sum up all the threads and their reponse and turnaround times
+  for (pair<int, Process*> entry : processes) {
+    Process* proc = entry.second;
+    stats.thread_counts[proc->type] += proc->threads.size();
+
+    double res_time = 0.0;
+    double ta_time = 0.0;
+    for (Thread* t : proc->threads) {
+      res_time += t->response_time();
+      ta_time += t->turnaround_time();
+    }
+    stats.avg_thread_response_times[proc->type] += res_time;
+    stats.avg_thread_turnaround_times[proc->type] += ta_time;
+  }
+  
+  // make the stats averages
+  for (int i = 0; i < 4; i++) {
+    // don't divide by zero
+    if (stats.thread_counts[i] > 0) {
+      stats.avg_thread_response_times[i] /= stats.thread_counts[i];
+      stats.avg_thread_turnaround_times[i] /= stats.thread_counts[i];
+    }
+  }
+
+  return stats;
 }

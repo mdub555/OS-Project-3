@@ -100,12 +100,5 @@ struct Thread {
     return end_time - arrival_time;
   }
 
-  // TODO: threads in our simulation have behavior, so add helper methods here
-  //     that perform helpful logic (optional).
-  //
-  // For example, I have methods for setting the thread to running, blocked, and
-  // so forth. These take care of updating the state and times based on the
-  // provided event.
-
   void set_state(State state, size_t time);
 };
