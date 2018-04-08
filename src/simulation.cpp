@@ -225,7 +225,7 @@ void Simulation::handle_dispatcher_invoked(const Event* event) {
   // the logger won't print for DISPATCHER_INVOKED since it is called with a nullptr thread, call it
   // in this function for the custom message
   // FIXME this function call creates a segfault after a process is preempted
-  //logger.print_verbose(event, e->thread, dec->explanation);
+  logger.print_verbose(event, e->thread, dec->explanation);
 
   active_thread = next_thread; // set here to show that the processor is busy
 }
