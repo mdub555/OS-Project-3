@@ -1,4 +1,5 @@
 #include "algorithms/multilevel_feedback_scheduler.h"
+#include "types/process.h"
 
 using namespace std;
 
@@ -29,10 +30,12 @@ SchedulingDecision* MultilevelFeedbackScheduler::get_next_thread(
 
 
 void MultilevelFeedbackScheduler::enqueue(const Event* event, Thread* thread) {
-  // if the thread isn't in the map, it's new so add it to the highest level
+  // if the thread isn't in the map, it's new so add it to the level corresponding
+  // to it's priority
   if (level_map.find(thread) == level_map.end()) {
-    queues[0]->enqueue(event, thread);
-    level_map.insert(std::pair<Thread*, int>(thread, 0));
+    int level = thread->process->type;
+    queues[level]->enqueue(event, thread);
+    level_map.insert(std::pair<Thread*, int>(thread, level));
   } else {
     // increment the level
     int level = level_map.at(thread) + 1;
