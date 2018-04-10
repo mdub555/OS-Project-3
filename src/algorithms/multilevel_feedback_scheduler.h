@@ -30,7 +30,7 @@ public:
 private:
   // implement 8 levels of queues
   const int NUM_QUEUES = 8;
-  // give them a constant time slice
+  // give them a constant time slice, the same as the default round robin scheduler
   const int TIME_SLICE = 3;
 
   // since a MLFQ is implemented with several RR queues, we can use those instead of making more
