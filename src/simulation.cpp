@@ -107,12 +107,18 @@ void Simulation::handle_thread_dispatch_completed(const Event* event) {
   // create a new event based on the time slice and thread length
   assert(event->thread->bursts.front()->type == Burst::Type::CPU);
   size_t burst_length = event->thread->bursts.front()->length;
-  size_t time_slice = event->scheduling_decision->time_slice;
+  // make a copy of the scheduling decision since the old one will be deleted
+  SchedulingDecision* dec = new SchedulingDecision();
+  dec->thread = event->scheduling_decision->thread;
+  dec->time_slice = event->scheduling_decision->time_slice;
+  dec->explanation = event->scheduling_decision->explanation;
+  size_t time_slice = dec->time_slice;
+
   if (time_slice < burst_length) { // thread gets preempted
     Event* e = new Event(Event::Type::THREAD_PREEMPTED,
                          event->time + time_slice,
                          event->thread,
-                         event->scheduling_decision);
+                         dec);
     add_event(e);
     stats.service_time += time_slice;
   } else {
@@ -193,6 +199,8 @@ void Simulation::handle_thread_preempted(const Event* event) {
 
   // decrease cpu burst
   assert(event->thread->bursts.front()->type == Burst::Type::CPU);
+  cout << event->thread->bursts.front()->length << " " << event->scheduling_decision->time_slice <<
+  endl;
   assert((size_t)event->thread->bursts.front()->length > event->scheduling_decision->time_slice);
   event->thread->bursts.front()->length -= event->scheduling_decision->time_slice;
 
