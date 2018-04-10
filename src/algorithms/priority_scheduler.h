@@ -3,6 +3,7 @@
 #include "types/event.h"
 #include "types/scheduling_decision.h"
 #include "types/thread.h"
+#include "algorithms/fcfs_scheduler.h"
 
 
 /**
@@ -11,6 +12,9 @@
  */
 class PriorityScheduler : public Scheduler {
 public:
+
+  PriorityScheduler();
+
 
   virtual SchedulingDecision* get_next_thread(const Event* event) override;
 
@@ -24,6 +28,9 @@ public:
   virtual size_t size() const override;
 
 private:
+  // make the number of priority levels into a variable
+  const int NUM_PRIORITIES = 4;
 
-  // TODO: add any instance variables you need
+  // create a vector of FCFS schedulers
+  std::vector<FcfsScheduler*> queues;
 };

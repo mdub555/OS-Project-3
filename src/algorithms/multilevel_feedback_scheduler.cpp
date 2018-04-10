@@ -12,7 +12,7 @@ MultilevelFeedbackScheduler::MultilevelFeedbackScheduler() {
 
 SchedulingDecision* MultilevelFeedbackScheduler::get_next_thread(
     const Event* event) {
-  // search through all the queues and get the decision of the first on that isn't empty
+  // search through all the queues and get the decision of the first one that isn't empty
   SchedulingDecision* dec;
   for (int i = 0; i < NUM_QUEUES; i++) {
     if (!queues[i]->empty()) {
