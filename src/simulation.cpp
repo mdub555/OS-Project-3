@@ -199,8 +199,6 @@ void Simulation::handle_thread_preempted(const Event* event) {
 
   // decrease cpu burst
   assert(event->thread->bursts.front()->type == Burst::Type::CPU);
-  cout << event->thread->bursts.front()->length << " " << event->scheduling_decision->time_slice <<
-  endl;
   assert((size_t)event->thread->bursts.front()->length > event->scheduling_decision->time_slice);
   event->thread->bursts.front()->length -= event->scheduling_decision->time_slice;
 
