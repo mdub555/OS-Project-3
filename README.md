@@ -71,3 +71,8 @@ processes, thus never running any of the currently ready low priority processes,
 processes can be starved. This makes the algorithm unfair, since fairness intails that a priority
 that is enqueued will eventually be ran, which might not be the case in any system that allows
 starvation.
+
+## Graded
+* Score tag final: 180/180
+* Score Total: 197/200
+
